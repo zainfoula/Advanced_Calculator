@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A free advanced online calculator with powers, square roots, percentages, and dark mode.">
+  <title>Zain's Advanced Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #eef2ff;
+  color: #172033;
+  margin: 0;
+  padding: 25px 15px;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  transition: 0.3s;
+}
+
+body.dark {
+  background: #101522;
+  color: #f5f7ff;
+}
+
+.calculator {
+  width: 100%;
+  max-width: 390px;
+  padding: 24px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 12px 35px #0002;
+}
+
+body.dark .calculator {
+  background: #20283a;
+}
+
+h1 {
+  font-size: 25px;
+  text-align: center;
+  margin-top: 0;
+}
+
+.subtitle {
+  text-align: center;
+  opacity: 0.75;
+  font-size: 14px;
+}
+
+#display {
+  width: 100%;
+  padding: 18px 12px;
+  margin: 15px 0;
+  border: 2px solid #ccd4e5;
+  border-radius: 12px;
+  font-size: 25px;
+  text-align: right;
+  background: #f8faff;
+  color: #172033;
+}
+
+body.dark #display {
+  background: #111827;
+  color: white;
+  border-color: #48536a;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+
+button {
+  min-height: 53px;
+  border: none;
+  border-radius: 12px;
+  font-size: 19px;
+  font-weight: bold;
+  cursor: pointer;
+  background: #e8edfa;
+  color: #172033;
+  transition: transform 0.1s, filter 0.2s;
+}
+
+button:hover {
+  filter: brightness(0.94);
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+button.operator {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+button.equal {
+  background: #2563eb;
+  color: white;
+}
+
+button.clear {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+body.dark button {
+  background: #364156;
+  color: white;
+}
+
+body.dark button.operator {
+  background: #233e72;
+}
+
+body.dark button.equal {
+  background: #2563eb;
+}
+
+body.dark button.clear {
+  background: #632d39;
+}
+
+#message {
+  min-height: 42px;
+  margin-top: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#theme {
+  display: block;
+  margin: 0 auto 15px;
+  padding: 10px 15px;
+  min-height: 40px;
+  font-size: 14px;
+}
+
+footer {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 18px;
+}
+
+  </style>
+</head>
+<body>
+  <main class="calculator">
+    <h1>🧮 Zain's Calculator</h1>
+    <p class="subtitle">Simple, powerful, and free!</p>
+
+<button id="theme" type="button">🌙 Switch to Dark Mode</button>
+
+<input id="display" type="text" value="0"
+  aria-label="Calculator display" readonly>
+
+<div class="buttons">
+  <button class="clear" data-action="clear">AC</button>
+  <button class="operator" data-action="delete">DEL</button>
+  <button class="operator" data-action="percent">%</button>
+  <button class="operator" data-action="operator" data-value="/">÷</button>
+
+  <button data-action="digit" data-value="7">7</button>
+  <button data-action="digit" data-value="8">8</button>
+  <button data-action="digit" data-value="9">9</button>
+  <button class="operator" data-action="operator" data-value="*">×</button>
+
+  <button data-action="digit" data-value="4">4</button>
+  <button data-action="digit" data-value="5">5</button>
+  <button data-action="digit" data-value="6">6</button>
+  <button class="operator" data-action="operator" data-value="-">−</button>
+
+  <button data-action="digit" data-value="1">1</button>
+  <button data-action="digit" data-value="2">2</button>
+  <button data-action="digit" data-value="3">3</button>
+  <button class="operator" data-action="operator" data-value="+">+</button>
+
+  <button data-action="digit" data-value="0">0</button>
+  <button data-action="decimal">.</button>
+  <button class="operator" data-action="square">x²</button>
+  <button class="operator" data-action="sqrt">√x</button>
+
+  <button class="operator" data-action="power">xʸ</button>
+  <button class="operator" data-action="sign">±</button>
+  <button class="equal" data-action="equals">=</button>
+</div>
+
+<p id="message" role="status" aria-live="polite">
+  Ready! Start calculating.
+</p>
+
+<footer>Made by Zain · Free online calculator</footer>
+
+  </main>
+
+  <script>
+    const display = document.getElementById("display");
+    const message = document.getElementById("message");
+
+    let current = "0";
+    let stored = null;
+    let operator = null;
+    let waiting = false;
+
+    function update() {
+      display.value = current;
+    }
+
+    function showMessage(text) {
+      message.textContent = text;
+    }
+
+    function reset() {
+      current = "0";
+      stored = null;
+      operator = null;
+      waiting = false;
+      update();
+      showMessage("Cleared! Ready for a new calculation.");
+    }
+
+    function calculate(a, op, b) {
+      if (op === "+") return a + b;
+      if (op === "-") return a - b;
+      if (op === "*") return a * b;
+      if (op === "/") {
+        if (b === 0) throw Error("You cannot divide by zero.");
+        return a / b;
+      }
+      if (op === "^") return Math.pow(a, b);
+      throw Error("Unknown operation. Please try again.");
+    }
+
+    function format(number) {
+      if (!Number.isFinite(number)) {
+        throw Error("The answer is too large or not a valid number.");
+      }
+      return String(Number(number.toPrecision(12)));
+    }
+
+    document.querySelector(".buttons").addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      const action = button.dataset.action;
+      const value = button.dataset.value;
+
+      try {
+        if (action === "clear") {
+          reset();
+          return;
+        }
+
+        if (action === "digit") {
+          if (waiting || current === "0" || current === "Error") {
+            current = value;
+            waiting = false;
+          } else if (current.replace("-", "").length < 15) {
+            current += value;
+          }
+          update();
+          showMessage("Number entered.");
+          return;
+        }
+
+        if (action === "decimal") {
+          if (waiting || current === "Error") {
+            current = "0.";
+            waiting = false;
+          } else if (!current.includes(".")) {
+            current += ".";
+          }
+          update();
+          return;
+        }
+
+        if (current === "Error") reset();
+
+        const number = Number(current);
+
+        if (action === "delete") {
+          current = current.length > 1 ? current.slice(0, -1) : "0";
+          if (current === "-") current = "0";
+          update();
+          return;
+        }
+
+        if (action === "sign") {
+          current = format(-number);
+          update();
+          showMessage("Changed the sign of the number.");
+          return;
+        }
+
+        if (action === "percent") {
+          current = format(number / 100);
+          update();
+          showMessage("Percentage: divided the number by 100.");
+          return;
+        }
+
+        if (action === "square") {
+          current = format(number * number);
+          update();
+          showMessage("Squared the number: multiplied it by itself.");
+          return;
+        }
+
+        if (action === "sqrt") {
+          if (number < 0) {
+            throw Error("Square roots of negative numbers are not real numbers.");
+          }
+          current = format(Math.sqrt(number));
+          update();
+          showMessage("Square root: a number that multiplies by itself to give the original.");
+          return;
+        }
+
+        if (action === "operator") {
+          if (operator && !waiting) {
+            current = format(calculate(stored, operator, number));
+            update();
+          }
+          stored = Number(current);
+          operator = value;
+          waiting = true;
+          showMessage("Choose the next number.");
+          return;
+        }
+
+        if (action === "power") {
+          stored = number;
+          operator = "^";
+          waiting = true;
+          showMessage("Enter the exponent, then press =.");
+          return;
+        }
+
+        if (action === "equals") {
+          if (operator === null || stored === null) {
+            showMessage("Choose an operation first, such as + or ×.");
+            return;
+          }
+          current = format(calculate(stored, operator, number));
+          stored = null;
+          operator = null;
+          waiting = true;
+          update();
+          showMessage("Calculation successful! 🎉");
+        }
+      } catch (error) {
+        current = "Error";
+        stored = null;
+        operator = null;
+        waiting = true;
+        update();
+        showMessage("⚠️ " + error.message);
+      }
+    });
+
+    document.getElementById("theme").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      const dark = document.body.classList.contains("dark");
+      document.getElementById("theme").textContent =
+        dark ? "☀️ Switch to Light Mode" : "🌙 Switch to Dark Mode";
+    });
+  </script>
+
+</body>
+</html>
